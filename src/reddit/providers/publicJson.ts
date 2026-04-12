@@ -8,7 +8,22 @@ const BASE = "https://www.reddit.com";
 const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000;
 
+// URL-level TTL cache to prevent duplicate Reddit fetches
+const cache = new Map<string, { data: unknown; ts: number }>();
+const CACHE_TTL_MS = 120_000; // 2 minutes
+
+/** Clear the URL cache (used in tests) */
+export function clearCache() {
+  cache.clear();
+}
+
 async function fetchWithRetry(url: string): Promise<unknown> {
+  // Check cache first
+  const cached = cache.get(url);
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
   let lastError: Error | undefined;
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
@@ -16,7 +31,9 @@ async function fetchWithRetry(url: string): Promise<unknown> {
         headers: { "User-Agent": USER_AGENT },
       });
       if (res.ok) {
-        return await res.json();
+        const data = await res.json();
+        cache.set(url, { data, ts: Date.now() });
+        return data;
       }
       const err = mapHttpError(res.status, url);
       if (!err.retryable) throw err;
@@ -79,7 +96,7 @@ function mapSubreddit(raw: any): SubredditInfo {
   };
 }
 
-function flattenComments(node: any, depth = 0, out: RedditComment[] = [], limit = 50): RedditComment[] {
+function flattenComments(node: any, depth = 0, out: RedditComment[] = [], limit = 50, seen = new Set<string>()): RedditComment[] {
   if (out.length >= limit) return out;
   if (!node) return out;
 
@@ -87,17 +104,18 @@ function flattenComments(node: any, depth = 0, out: RedditComment[] = [], limit 
   if (node.kind === "Listing" && node.data?.children) {
     for (const child of node.data.children) {
       if (out.length >= limit) break;
-      flattenComments(child, depth, out, limit);
+      flattenComments(child, depth, out, limit, seen);
     }
     return out;
   }
 
   const comment = mapComment(node, depth);
-  if (comment) {
+  if (comment && !seen.has(comment.id)) {
+    seen.add(comment.id);
     out.push(comment);
     // recurse into replies
     if (node.data?.replies && typeof node.data.replies === "object") {
-      flattenComments(node.data.replies, depth + 1, out, limit);
+      flattenComments(node.data.replies, depth + 1, out, limit, seen);
     }
   }
   return out;

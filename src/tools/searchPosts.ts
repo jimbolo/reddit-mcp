@@ -2,6 +2,11 @@ import { z } from "zod";
 import type { RedditProvider } from "../reddit/client.js";
 import { validateQuery, validateLimit, validateSort, validateTimeFilter, validateSubreddit } from "../core/validation.js";
 
+// Strip selftext from search results — full body available via get_post_details
+function stripSelftext(post: { selftext: string; [k: string]: any }) {
+  return { ...post, selftext: post.selftext ? post.selftext.slice(0, 100) + (post.selftext.length > 100 ? "..." : "") : "" };
+}
+
 export const SearchPostsSchema = {
   query: z.string().describe("Search query string"),
   subreddit: z.string().optional().describe("Subreddit to search in (default: 'all' for global search)"),
@@ -30,11 +35,12 @@ export async function handleSearchPosts(
 
   const result = await provider.search(query, subreddit, sort, timeFilter, limit, args.after);
 
+  const compactPosts = result.posts.map(stripSelftext);
   return {
     content: [
       {
         type: "text" as const,
-        text: JSON.stringify(result, null, 2),
+        text: JSON.stringify({ ...result, posts: compactPosts }),
       },
     ],
   };

@@ -1,13 +1,15 @@
 {
   "name": "reddit-mcp",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Reddit MCP server for scanning and searching posts",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "tsc && node dist/server.js"
+    "dev": "tsc && node dist/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
@@ -15,6 +17,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.15",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^4.1.4"
   }
 }

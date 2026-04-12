@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { RedditProvider } from "../reddit/client.js";
+import type { RedditPost } from "../core/types.js";
 import { validateSubreddit, validateLimit, validateSort, validateTimeFilter } from "../core/validation.js";
+
+// Strip selftext from listing posts — full body is available via get_post_details
+function stripSelftext<T extends RedditPost>(post: T): Omit<T, "selftext"> & { selftext: string } {
+  return { ...post, selftext: post.selftext ? post.selftext.slice(0, 100) + (post.selftext.length > 100 ? "..." : "") : "" };
+}
 
 export const ScanSubredditSchema = {
   subreddit: z.string().describe("Subreddit name (without r/ prefix), e.g. 'programming'"),
@@ -39,9 +45,9 @@ export async function handleScanSubreddit(
       result.posts.slice(0, 10).map(async (post) => {
         try {
           const details = await provider.fetchPostDetails(subreddit, post.id, commentLimit);
-          return { ...post, comments: details.comments };
+          return { ...stripSelftext(post), comments: details.comments };
         } catch {
-          return { ...post, comments: [] };
+          return { ...stripSelftext(post), comments: [] };
         }
       }),
     );
@@ -49,17 +55,18 @@ export async function handleScanSubreddit(
       content: [
         {
           type: "text" as const,
-          text: JSON.stringify({ ...result, posts: enriched }, null, 2),
+          text: JSON.stringify({ ...result, posts: enriched }),
         },
       ],
     };
   }
 
+  const compactPosts = result.posts.map(stripSelftext);
   return {
     content: [
       {
         type: "text" as const,
-        text: JSON.stringify(result, null, 2),
+        text: JSON.stringify({ ...result, posts: compactPosts }),
       },
     ],
   };
