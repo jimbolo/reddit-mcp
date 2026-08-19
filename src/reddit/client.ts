@@ -13,3 +13,4 @@ export interface RedditProvider {
 }
 
 export { PublicJsonProvider } from "./providers/publicJson.js";
+export { OAuthProvider } from "./providers/oauth.js";

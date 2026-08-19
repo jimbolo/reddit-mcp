@@ -21,7 +21,15 @@ npm run build
 
 Requires Node.js 18 or newer.
 
-The server uses Reddit's public JSON endpoints and does not require Reddit API credentials.
+The server uses Reddit's public JSON endpoints when anonymous requests are permitted. Reddit now blocks anonymous Data API traffic from many hosted networks. For reliable server-side access, register a Reddit app and add the OAuth application credentials to the local, gitignored `.env` file before starting the server:
+
+```dotenv
+REDDIT_CLIENT_ID=your-client-id
+REDDIT_CLIENT_SECRET=your-client-secret
+REDDIT_USER_AGENT=script:reddit-mcp:v1.0 (by /u/your_reddit_username)
+```
+
+When both `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET` are present, the server automatically uses the OAuth provider. The `.env` file is ignored by Git and is not committed.
 
 ## Claude Desktop Configuration
 

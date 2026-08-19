@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { PublicJsonProvider } from "./reddit/client.js";
+import { existsSync, readFileSync } from "node:fs";
+import { OAuthProvider, PublicJsonProvider } from "./reddit/client.js";
 import { RedditMcpError } from "./core/errors.js";
 
 import { ScanSubredditSchema, handleScanSubreddit } from "./tools/scanSubreddit.js";
@@ -9,7 +10,25 @@ import { GetPostDetailsSchema, handleGetPostDetails } from "./tools/getPostDetai
 import { FindSubredditsSchema, handleFindSubreddits } from "./tools/findSubreddits.js";
 import { GetSubredditInfoSchema, handleGetSubredditInfo } from "./tools/getSubredditInfo.js";
 
-const provider = new PublicJsonProvider();
+function loadDotEnv() {
+  if (!existsSync(".env")) return;
+
+  for (const line of readFileSync(".env", "utf8").split(/\r?\n/)) {
+    const match = line.match(/^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
+    if (!match || process.env[match[1]] !== undefined) continue;
+    process.env[match[1]] = match[2].replace(/^(["'])(.*)\1$/, "$2");
+  }
+}
+
+loadDotEnv();
+
+const provider = process.env.REDDIT_CLIENT_ID && process.env.REDDIT_CLIENT_SECRET
+  ? new OAuthProvider({
+      clientId: process.env.REDDIT_CLIENT_ID,
+      clientSecret: process.env.REDDIT_CLIENT_SECRET,
+      userAgent: process.env.REDDIT_USER_AGENT ?? "script:reddit-mcp:v1.0 (by /u/unknown)",
+    })
+  : new PublicJsonProvider();
 
 const server = new McpServer({
   name: "reddit-mcp",
