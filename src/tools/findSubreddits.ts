@@ -3,7 +3,7 @@ import type { RedditProvider } from "../reddit/client.js";
 import { validateQuery, validateLimit } from "../core/validation.js";
 
 export const FindSubredditsSchema = {
-  query: z.string().describe("Topic or keyword to search for subreddits (e.g. 'email deliverability', 'AI agents')"),
+  query: z.string().describe("Topic or keyword to search for subreddits (e.g. 'virtual business address', 'package forwarding', 'registered agent', 'mail forwarding')"),
   limit: z.number().min(1).max(25).optional().describe("Number of subreddits to return (1-25, default 10)"),
   after: z.string().optional().describe("Pagination cursor from a previous response"),
 };

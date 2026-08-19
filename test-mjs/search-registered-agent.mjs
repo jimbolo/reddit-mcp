@@ -1,5 +1,5 @@
 // Search script: find "registered agent" posts since April 1, 2026
-import { PublicJsonProvider } from "./dist/reddit/providers/publicJson.js";
+import { PublicJsonProvider } from "../dist/reddit/providers/publicJson.js";
 
 const provider = new PublicJsonProvider();
 const APRIL_1_UTC = new Date("2026-04-01T00:00:00Z").getTime() / 1000;
