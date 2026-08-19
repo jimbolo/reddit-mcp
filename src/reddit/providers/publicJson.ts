@@ -3,7 +3,7 @@ import type { SortOption, TimeFilter } from "../../core/validation.js";
 import type { RedditPost, RedditComment, ScanResult, SearchResult, PostDetails, SubredditInfo, SubredditSearchResult } from "../../core/types.js";
 import { mapHttpError, RedditMcpError, ErrorCode } from "../../core/errors.js";
 
-const USER_AGENT = "RedditMCP/1.0 (MCP server; +https://github.com/reddit-mcp)";
+const USER_AGENT = "RedditMCP/1.0 (MCP server; +https://github.com/jimbolo/reddit-mcp)";
 const BASE = "https://www.reddit.com";
 const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000;

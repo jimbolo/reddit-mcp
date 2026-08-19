@@ -1,4 +1,4 @@
-# Reddit MCP Server
+# Reddit MCP Server v3
 
 MCP server that lets Claude (and other MCP clients) scan, search, and read Reddit posts and comments.
 
@@ -21,7 +21,15 @@ npm run build
 
 Requires Node.js 18 or newer.
 
-The server uses Reddit's public JSON endpoints when anonymous requests are permitted. Reddit now blocks anonymous Data API traffic from many hosted networks. For reliable server-side access, register a Reddit app and add the OAuth application credentials to the local, gitignored `.env` file before starting the server:
+The server uses Reddit's public JSON endpoints by default. Public requests include retry handling, exponential backoff, and a short-lived URL cache. Reddit blocks anonymous Data API traffic from many hosted networks, so OAuth credentials are recommended for reliable server-side access.
+
+Copy the committed `env.txt` template to `.env`, then fill in the Reddit app credentials:
+
+```bash
+cp env.txt .env
+```
+
+On Windows PowerShell, use `Copy-Item env.txt .env`. The `.env` file is gitignored and is loaded automatically when the server starts.
 
 ```dotenv
 REDDIT_CLIENT_ID=your-client-id
@@ -29,7 +37,7 @@ REDDIT_CLIENT_SECRET=your-client-secret
 REDDIT_USER_AGENT=script:reddit-mcp:v1.0 (by /u/your_reddit_username)
 ```
 
-When both `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET` are present, the server automatically uses the OAuth provider. The `.env` file is ignored by Git and is not committed.
+When both `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET` are present, the server automatically uses the OAuth provider with cached access tokens. Otherwise it falls back to the public JSON provider.
 
 ## Claude Desktop Configuration
 
@@ -78,9 +86,12 @@ Once connected, Claude can use these tools:
 
 - `src/server.ts` — MCP server entry, tool registration, stdio transport
 - `src/tools/` — Individual tool handlers with input validation
-- `src/reddit/` — Reddit data client with provider abstraction
-- `src/reddit/providers/publicJson.ts` — Public JSON endpoint provider (MVP)
-- `src/core/` — Shared types, validation, and error taxonomy
-- `src/tests/` — Unit tests for caching and comment deduplication
+- `src/reddit/client.ts` — `RedditProvider` interface and provider exports
+- `src/reddit/providers/publicJson.ts` — Anonymous JSON provider with retries, backoff, caching, and comment deduplication
+- `src/reddit/providers/oauth.ts` — OAuth provider with cached access tokens
+- `src/core/types.ts` — Stable result types shared by all tools and providers
+- `src/core/validation.ts` — Zod input schemas and sort/time-filter validation
+- `src/core/errors.ts` — Shared error taxonomy and HTTP error mapping
+- `env.txt` — Committed template for local OAuth configuration; copy it to `.env`
 
-The provider interface (`RedditProvider`) makes it easy to swap to Reddit OAuth API later without changing any tool code.
+Both providers implement the same `RedditProvider` interface, so the tool layer does not depend on Reddit's transport or authentication method.
